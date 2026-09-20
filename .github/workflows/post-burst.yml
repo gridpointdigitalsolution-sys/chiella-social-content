@@ -1,0 +1,31 @@
+name: Chi'Ella burst post (manual, one-off)
+
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "How many posts to fire, 10 min apart"
+        required: false
+        default: "20"
+      start_index:
+        description: "Queue index to start from"
+        required: false
+        default: "0"
+
+jobs:
+  burst:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Burst post
+        env:
+          META_PAGE_TOKEN: ${{ secrets.META_PAGE_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/main
+        run: python scripts/post_burst.py ${{ github.event.inputs.count }} ${{ github.event.inputs.start_index }}
