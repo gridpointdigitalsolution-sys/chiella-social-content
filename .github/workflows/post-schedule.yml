@@ -28,11 +28,11 @@ jobs:
           if [ -n "${{ github.event.inputs.slot }}" ]; then
             echo "slot=${{ github.event.inputs.slot }}" >> "$GITHUB_OUTPUT"
           else
-            HOUR=$(date -u +%H)
-            if [ "$HOUR" = "07" ]; then echo "slot=morning" >> "$GITHUB_OUTPUT"
-            elif [ "$HOUR" = "12" ]; then echo "slot=afternoon" >> "$GITHUB_OUTPUT"
-            else echo "slot=evening" >> "$GITHUB_OUTPUT"
-            fi
+            case "${{ github.event.schedule }}" in
+              "0 7 * * *") echo "slot=morning" >> "$GITHUB_OUTPUT" ;;
+              "0 12 * * *") echo "slot=afternoon" >> "$GITHUB_OUTPUT" ;;
+              *) echo "slot=evening" >> "$GITHUB_OUTPUT" ;;
+            esac
           fi
       - name: Post
         env:

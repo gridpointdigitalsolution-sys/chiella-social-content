@@ -4,7 +4,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from post_today import post_facebook, post_instagram, RAW_BASE, ROOT  # noqa: E402
+from post_today import post_facebook, post_instagram, media_url, ROOT  # noqa: E402
 
 
 def main():
@@ -17,7 +17,7 @@ def main():
     for i in range(count):
         idx = (start_index + i) % len(queue)
         item = queue[idx]
-        url = f"{RAW_BASE}/{item['path']}"
+        url = media_url(item["path"])
         print(f"\n=== burst {i+1}/{count} — item #{idx}: {item['path']} ===")
         fb_ok = post_facebook(item, url)
         ig_ok = post_instagram(item, url)

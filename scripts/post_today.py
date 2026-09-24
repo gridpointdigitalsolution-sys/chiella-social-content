@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import time
+import urllib.parse
 
 import requests
 
@@ -17,6 +18,10 @@ PAGE_TOKEN = os.environ["META_PAGE_TOKEN"]
 PAGE_ID = os.environ["FB_PAGE_ID"]
 IG_ID = os.environ["IG_USER_ID"]
 RAW_BASE = os.environ["RAW_BASE"]  # e.g. https://raw.githubusercontent.com/owner/repo/main
+
+
+def media_url(path):
+    return f"{RAW_BASE}/{urllib.parse.quote(path)}"
 
 
 def load_queue():
@@ -55,19 +60,18 @@ def post_instagram(item, url):
     if not creation_id:
         return False
 
-    # video containers need time to process before publish
-    if item["type"] == "video":
-        for _ in range(10):
-            time.sleep(15)
-            s = requests.get(f"{GRAPH}/{creation_id}", params={
-                "fields": "status_code", "access_token": PAGE_TOKEN,
-            })
-            status = s.json().get("status_code")
-            print("IG video status:", status)
-            if status == "FINISHED":
-                break
-            if status == "ERROR":
-                return False
+    # containers (image and video) need time to process before publish
+    for _ in range(20):
+        time.sleep(10 if item["type"] != "video" else 15)
+        s = requests.get(f"{GRAPH}/{creation_id}", params={
+            "fields": "status_code", "access_token": PAGE_TOKEN,
+        })
+        status = s.json().get("status_code")
+        print("IG container status:", status)
+        if status == "FINISHED":
+            break
+        if status == "ERROR":
+            return False
 
     p = requests.post(f"{GRAPH}/{IG_ID}/media_publish", data={
         "creation_id": creation_id, "access_token": PAGE_TOKEN,
@@ -91,7 +95,7 @@ def main():
         print(f"queue exhausted once, looping (effective index {idx})")
 
     item = queue[idx]
-    url = f"{RAW_BASE}/{item['path']}"
+    url = media_url(item["path"])
     print(f"Day {day_number} [{slot_name}] item #{idx}: {item['path']}")
 
     fb_ok = post_facebook(item, url)
