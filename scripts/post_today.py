@@ -12,6 +12,7 @@ ROOT = os.path.dirname(HERE)
 
 GRAPH = "https://graph.facebook.com/v21.0"
 START_DATE = datetime.date(2026, 9, 21)
+SKIP_ITEMS = 20  # items 0-19 already went out in the manual burst; never repeat them
 SLOTS = ["morning", "afternoon", "evening"]
 
 PAGE_TOKEN = os.environ["META_PAGE_TOKEN"]
@@ -89,7 +90,7 @@ def main():
     if day_number < 0:
         print("before start date, nothing to post yet")
         return
-    idx = day_number * 3 + slot_idx
+    idx = SKIP_ITEMS + day_number * 3 + slot_idx
     if idx >= len(queue):
         idx = idx % len(queue)  # loop back to start once exhausted
         print(f"queue exhausted once, looping (effective index {idx})")
