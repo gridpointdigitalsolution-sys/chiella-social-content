@@ -3,9 +3,10 @@ name: Chi'Ella daily post
 on:
   schedule:
     # Nigeria is WAT = UTC+1, no DST
-    - cron: "0 7 * * *"    # 08:00 WAT — morning
-    - cron: "0 12 * * *"   # 13:00 WAT — afternoon
-    - cron: "0 18 * * *"   # 19:00 WAT — evening
+    # Fire ~2h early; job sleeps until the exact target so GitHub queue delays don't matter
+    - cron: "0 5 * * *"    # posts 08:00 WAT — morning
+    - cron: "0 10 * * *"   # posts 13:00 WAT — afternoon
+    - cron: "0 16 * * *"   # posts 19:00 WAT — evening
   workflow_dispatch:
     inputs:
       slot:
@@ -29,11 +30,17 @@ jobs:
             echo "slot=${{ github.event.inputs.slot }}" >> "$GITHUB_OUTPUT"
           else
             case "${{ github.event.schedule }}" in
-              "0 7 * * *") echo "slot=morning" >> "$GITHUB_OUTPUT" ;;
-              "0 12 * * *") echo "slot=afternoon" >> "$GITHUB_OUTPUT" ;;
-              *) echo "slot=evening" >> "$GITHUB_OUTPUT" ;;
+              "0 5 * * *") echo "slot=morning" >> "$GITHUB_OUTPUT"; echo "target=07:00" >> "$GITHUB_OUTPUT" ;;
+              "0 10 * * *") echo "slot=afternoon" >> "$GITHUB_OUTPUT"; echo "target=12:00" >> "$GITHUB_OUTPUT" ;;
+              *) echo "slot=evening" >> "$GITHUB_OUTPUT"; echo "target=18:00" >> "$GITHUB_OUTPUT" ;;
             esac
           fi
+      - name: Wait until exact posting time
+        if: steps.slot.outputs.target != ''
+        run: |
+          NOW=$(date -u +%s)
+          TGT=$(date -u -d "$(date -u +%F) ${{ steps.slot.outputs.target }}" +%s)
+          if [ "$TGT" -gt "$NOW" ]; then sleep $((TGT-NOW)); fi
       - name: Post
         env:
           META_PAGE_TOKEN: ${{ secrets.META_PAGE_TOKEN }}
